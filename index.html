@@ -1,13 +1,11 @@
 <!DOCTYPE html>
-<!--
-add indexeddb local save
-add file save/load
-add google sign-in
-add google drive import/export
-
+<!-- TODO:
 add an actual wasm python interpreter
+make run button run the code
+add micropip and automatic seamless package management
+make repl button work (just launches python3)
 
-maybe add pygame support
+add support for pygame-ce (open in new window when virtual window is created)
 
 -->
 <html lang="en">
@@ -19,6 +17,7 @@ maybe add pygame support
         <meta property="og:description" content="Nuilith Python IDE" />
         <meta property="og:image" content="/assets/icon.png" />
         <title>Nuilith Python IDE</title>
+        <!-- basic components -->
         <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
         <script src="https://unpkg.com/codemirror@5.65.21/lib/codemirror.js"></script>
         <script src="https://unpkg.com/codemirror@5.65.21/mode/python/python.js"></script>
@@ -26,6 +25,7 @@ maybe add pygame support
         <link rel="stylesheet" type="text/css" href="/programiz.css">
         <script src="https://unpkg.com/alpinejs" defer></script>
 
+        <!-- codemirror addons -->
         <script src="https://unpkg.com/codemirror@5.65.21/addon/comment/comment.js"></script>
         <script src="https://unpkg.com/codemirror@5.65.21/addon/search/search.js"></script>
         <script src="https://unpkg.com/codemirror@5.65.21/addon/search/searchcursor.js"></script>
@@ -40,78 +40,35 @@ maybe add pygame support
         <link rel="icon" type="image/png" href="/assets/icon.png" />
         <link rel="stylesheet" type="text/css" href="style.css">
 
-        <script type="text/javascript">
-            var myCodeMirror;
-            globalThis.myCodeMirror = null;
-            if (navigator.serviceWorker) {
-                navigator.serviceWorker.register('sw.js');
-            }
+        <!-- code and terminal stuff -->
+        <script src="https://unpkg.com/jquery@4.0.0/dist/jquery.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/jquery.terminal@2.45.2/css/jquery.terminal.css">
+        <script src="https://unpkg.com/jquery.terminal@2.45.2/js/jquery.terminal.js"></script>
+        <script src="https://unpkg.com/js-polyfills/keyboard.js"></script>
+        <script src="https://cdn.jsdelivr.net/gh/jcubic/static/js/wcwidth.js"></script>
 
-            window.addEventListener('load', function() {
-                editorpage = document.getElementById("editor");
-                myCodeMirror = CodeMirror(editorpage, {
-                    value: "# Welcome to Nuilith IDE\n",
-                    mode: "python",
-                    theme: "programiz",              // needs dracula.css from unpkg
-                    lineNumbers: true,
-                    indentUnit: 2,
-                    tabSize: 2,
-                    indentWithTabs: false,
-                    smartIndent: true,
-                    electricChars: true,
-                    lineWrapping: false,
-                    autofocus: true,
-                    undoDepth: 200,
-                    historyEventDelay: 1000,
-                    cursorBlinkRate: 530,
-                    cursorScrollMargin: 4,
-                    cursorHeight: 1,
-                    lineWiseCopyCut: true,
-                    dragDrop: true,
-                    viewportMargin: 50,            // render extra lines above/below for smoother scroll
-                    maxHighlightLength: 50000,
-                    fixedGutter: true,
-                    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-                    scrollbarStyle: "native",
-                    inputStyle: "textarea",
-                    extraKeys: {
-                        "Tab": (cm) => {
-                            if (cm.somethingSelected()) {
-                                cm.indentSelection("add");
-                            } else {
-                                cm.replaceSelection("    ", "end"); // 4 spaces instead of tab char
-                            }
-                        },
-                        "Shift-Tab": (cm) => cm.indentSelection("subtract"),
-                        "Ctrl-/": "toggleComment",             // needs addon/comment/comment.js
-                        "Ctrl-Z": "undo",
-                        "Ctrl-Y": "redo",
-                        "Ctrl-D": "deleteLine",
-                        "Ctrl-F": "findPersistent",            // needs addon/search
-                        "Ctrl-H": "replace",                   // needs addon/search
-                        "Ctrl-G": "jumpToLine",                // needs addon/search
-                        "Alt-Up": "swapLineUp",                // needs addon/move-lines
-                        "Alt-Down": "swapLineDown",
-                        "Ctrl-]": (cm) => cm.indentSelection("add"),
-                        "Ctrl-[": (cm) => cm.indentSelection("subtract"),
-                    }
-                });
-            });
+        <!-- python runtime environment -->
+        <script src="https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js"></script>
+        <script src="/index.js"></script>
 
-            function runcode(code) {
-                console.log(code);
-                console.log('code ran successfully');
-            }
-        </script>
     </head>
     <body>
-        <div class="w-70 m-5 " id="info" x-data="{ open: false }">
-            <h1 class="text-2xl text-center bg-gray-800 border-4 border-gray-700 p-4 rounded-2xl"><span class="clickable" @click="open = true" @click.away="open = false">Nuilith</span> Python IDE</h1>
+        <div class="flex items-center gap-4 m-2" id="info" x-data="{ open: false }">
+            
+            <h1 class="text-2xl text-center bg-gray-800 border-4 border-gray-700 pt-4 pb-4 px-6 rounded-2xl flex items-center">
+                <img src="/assets/icon.png" class="w-10 h-10 inline-block mr-2" />
+                <span class="clickable" @click="open = true" @click.away="open = false">Nuilith</span>&nbsp;Python IDE
+            </h1>
 
-            <span class="text-sm w-150 inline-block border-4 border-gray-800 p-4 rounded-lg bg-gray-700" x-show="open" x-transition.opacity.duration.300ms style="display: none;">
-                <b>Nuilith</b> is a <a style="text-decoration: none;" class="clickable" href="https://en.wikipedia.org/wiki/Neo-Latin">Neo-Latin</a> pseudoword meaning "No Stupid", which reinforces the idea of this IDE, to be a no-stupid straightforward Python IDE.
+            <div class="absolute mt-32" x-show="open" x-transition.opacity style="display: none; z-index: 50;">
+                <span class="text-sm w-80 inline-block border-4 border-gray-800 p-4 rounded-lg bg-gray-700">
+                    <b>Nuilith</b> is a <a class="clickable" href="https://en.wikipedia.org/wiki/Neo-Latin">Neo-Latin</a> pseudoword meaning "No Stupid".
+                </span>
+            </div>
+
+            <span class="text-lg whitespace-nowrap border-4 border-gray-800 p-4 rounded-lg bg-gray-700 h-full flex items-center">
+                Time since last autosave: <span id="autosavetime" class="ml-2 font-mono">0s</span>
             </span>
-
             
         </div>
         <div class="flex w-full h-100 overflow-hidden" style="height: calc(100vh - 120px);" id="doublepanel">
@@ -119,19 +76,22 @@ maybe add pygame support
                 <div class="border-t-3 border-b-2 border-gray-700" style="background-color: var(--menu);" id="toolbar-left">
                     <ol class="flex flex-row p-2 items-center justify-end" style="justify-content: space-between;">
                         <li class="items-center justify-center text-center"><p class="flex text-lg w-20 h-8 items-center justify-center text-white align-middle text-center rounded-lg bg-gray-700">main.py</p></li>
-                        <li><button class="w-15 h-7 rounded-lg text-white clickbutton" onclick="runcode(myCodeMirror.getValue());">Run</button></li>
+                        <li><button class="flex w-25 h-7 rounded-lg text-white border-2 border-white items-center" onclick="loadcode();"><img class="w-5 h-5 ml-1 mr-2 p-0 invert" src="https://cdn-icons-png.flaticon.com/512/12067/12067091.png">Import</button></li>
+                        <li><button class="flex w-25 h-7 rounded-lg text-white border-2 border-white items-center" onclick="savecode();"><img class="w-5 h-5 ml-1 mr-2 p-0 invert" src="https://cdn-icons-png.flaticon.com/512/15221/15221871.png">Export</button></li>
+                        <li><button class="w-15 h-7 rounded-lg text-white clickbutton" onclick="runcode();">Run</button></li>
                     </ol>
                 </div>
-                <div class="w-full h-full overflow-hidden" id="editor"></div>
+                <div class="w-full h-full overflow-hidden" style="background-color: #1C2130;" id="editor"></div>
             </div>
             <div class="w-1/2 h-full overflow-hidden" id="output">
                 <div class="border-t-3 border-b-2 border-gray-700" style="background-color: var(--menu);" id="toolbar-right">
                     <ol class="flex flex-row p-2 items-center justify-end" style="justify-content: space-between;">
                         <li class="items-center justify-center text-center"><p class="flex text-lg w-20 h-8 items-center justify-center text-white align-middle text-center rounded-lg bg-gray-700">Output</p></li>
-                        <li><button class="w-15 h-7 rounded-lg text-white border-2 border-white" onclick="">Clear</button></li>
+                        <li><button class="ml-150 w-25 h-7 rounded-lg text-white border-2 border-white" onclick="repl()">Start REPL</button></li>
+                        <li><button class="w-15 h-7 rounded-lg text-white border-2 border-white" onclick="term.clear();">Clear</button></li>
                     </ol>
                 </div>
-                <div class="w-full h-full overflow-hidden" style="background-color: #1C2130;" id="output"></div>
+                <div id="terminal"></div>
             </div>
         </div>
         

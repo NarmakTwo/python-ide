@@ -1,62 +1,77 @@
-const CACHE_NAME = 'my-site-cache-v1';
-const DEBUG = true;
+/**
+ * Nuilith Service Worker
+ * Handlers: Offline Cache + Synchronous Input Bridge
+ */
 
-const log = (message, color = '#7f8c8d') => {
-  if (DEBUG) console.log(`%c${message}`, `color: ${color}`);
-};
+const CACHE_NAME = 'nuilith-cache-v1';
+const ASSETS_TO_CACHE = [
+    './',
+    './index.html',
+    './index.js',
+    './worker.js',
+    './style.css',
+    './programiz.css'
+];
 
-// No precaching on install — just activate ASAP
 self.addEventListener('install', (event) => {
-  log('[SW] Install: Skipping waiting...', '#3498db');
-  event.waitUntil(self.skipWaiting());
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
+    );
+    self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  log('[SW] Activate: Cleaning up old caches...', '#9b59b6');
-  event.waitUntil(
-    caches.keys().then((keys) => Promise.all(
-      keys.map((key) => {
-        if (key !== CACHE_NAME) {
-          log(`[SW] Deleting obsolete cache: ${key}`);
-          return caches.delete(key);
-        }
-      })
-    )).then(() => self.clients.claim())
-  );
+    event.waitUntil(
+        caches.keys().then((keys) => Promise.all(
+            keys.map((key) => {
+                if (key !== CACHE_NAME) return caches.delete(key);
+            })
+        )).then(() => self.clients.claim())
+    );
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests over http/https — ignore chrome-extension, data:, etc.
-  if (event.request.method !== 'GET') return;
-  const url = new URL(event.request.url);
-  if (!url.protocol.startsWith('http')) return;
+    const url = new URL(event.request.url);
 
-  const pathname = url.pathname;
+    // --- THE INPUT TRAP ---
+    if (url.pathname.includes('/get_input')) {
+        event.respondWith(
+            new Promise((resolve) => {
+                const channel = new MessageChannel();
+                
+                channel.port1.onmessage = (msg) => {
+                    resolve(new Response(msg.data, {
+                        status: 200,
+                        headers: { 'Content-Type': 'text/plain' }
+                    }));
+                };
 
-  event.respondWith(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.match(event.request).then((cachedResponse) => {
+                self.clients.matchAll().then((clients) => {
+                    const client = clients.find(c => c.id === event.clientId) || clients[0];
+                    if (client) {
+                        client.postMessage({ type: 'INPUT_REQUEST' }, [channel.port2]);
+                    }
+                });
+            })
+        );
+        return;
+    }
 
-        const fetchPromise = fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            log(`[SW] Caching & serving: ${pathname}`, '#2ecc71');
-            cache.put(event.request, networkResponse.clone());
-          }
-          return networkResponse;
-        }).catch(() => {
-          console.warn(`[SW] Fetch failed for ${pathname} (offline)`);
-        });
+    // --- OFFLINE CACHING ---
+    if (event.request.method !== 'GET' || !url.protocol.startsWith('http')) return;
 
-        if (cachedResponse) {
-          log(`[SW] Serving from cache: ${pathname}`, '#f39c12');
-          // Refresh cache in background (stale-while-revalidate)
-          fetchPromise;
-          return cachedResponse;
-        }
+    event.respondWith(
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.match(event.request).then((cachedResponse) => {
+                const fetchPromise = fetch(event.request).then((networkResponse) => {
+                    if (networkResponse && networkResponse.status === 200) {
+                        cache.put(event.request, networkResponse.clone());
+                    }
+                    return networkResponse;
+                }).catch(() => {});
 
-        log(`[SW] Not in cache, fetching: ${pathname}`, '#e74c3c');
-        return fetchPromise;
-      });
-    })
-  );
+                return cachedResponse || fetchPromise;
+            });
+        })
+    );
 });

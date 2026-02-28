@@ -6,6 +6,7 @@
     --menu: #383b40ff;
     --fg: #ffffffff;
     --hil2: #c2a523ff;
+    --hil3: #806c17ff;
 }
 
 .clickable {
@@ -19,6 +20,13 @@
     color: var(--hil2);
     transition: color 0.3s ease-in-out;
 }
+
+.clickable:active {
+    cursor: pointer;
+    color: var(--hil3);
+    transition: color 0.1s ease-out;
+}
+
 
 body {
     background-color: var(--bg);
@@ -35,4 +43,30 @@ body {
     cursor: pointer;
     background-color: var(--hil2);
     transition: background-color 0.15s ease-in-out;
+}
+
+.clickbutton:active {
+    cursor: pointer;
+    background-color: var(--hil3);
+    transition: background-color 0.1s ease-out;
+}
+
+/* Right panel needs to be a flex column */
+#output {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Terminal fills remaining space after toolbar */
+#terminal {
+    flex: 1;
+    min-height: 0;        /* critical — without this, flex won't shrink past content */
+    background-color: #1C2130;
+}
+
+/* Inner terminal div must also fill its container */
+#terminal .terminal {
+    height: 100% !important;
+    --background: #1C2130 !important;
+    background-color: #1C2130 !important;
 }
