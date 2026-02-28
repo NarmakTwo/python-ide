@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<!--
+add indexeddb local save
+add file save/load
+add google sign-in
+add google drive import/export
+
+add an actual wasm python interpreter
+
+maybe add pygame support
+
+-->
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <!-- openrouter tags -->
+        <meta property="og:title" content="Nuilith IDE" />
+        <meta property="og:description" content="Nuilith Python IDE" />
+        <meta property="og:image" content="/assets/icon.png" />
+        <title>Nuilith Python IDE</title>
+        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+        <script src="https://unpkg.com/codemirror@5.65.21/lib/codemirror.js"></script>
+        <script src="https://unpkg.com/codemirror@5.65.21/mode/python/python.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://unpkg.com/codemirror@5.65.21/lib/codemirror.css">
+        <link rel="stylesheet" type="text/css" href="/programiz.css">
+        <script src="https://unpkg.com/alpinejs" defer></script>
+
+        <script src="https://unpkg.com/codemirror@5.65.21/addon/comment/comment.js"></script>
+        <script src="https://unpkg.com/codemirror@5.65.21/addon/search/search.js"></script>
+        <script src="https://unpkg.com/codemirror@5.65.21/addon/search/searchcursor.js"></script>
+        <script src="https://unpkg.com/codemirror@5.65.21/addon/search/jump-to-line.js"></script>
+        <script src="https://unpkg.com/codemirror@5.65.21/addon/dialog/dialog.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/codemirror@5.65.21/addon/dialog/dialog.css">
+        <script src="https://unpkg.com/codemirror@5.65.21/addon/edit/move-lines.js"></script>
+        <script src="https://unpkg.com/codemirror@5.65.21/addon/fold/foldgutter.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/codemirror@5.65.21/addon/fold/foldgutter.css">
+        <script src="https://unpkg.com/codemirror@5.65.21/addon/fold/indent-fold.js"></script>
+
+        <link rel="icon" type="image/png" href="/assets/icon.png" />
+        <link rel="stylesheet" type="text/css" href="style.css">
+
+        <script type="text/javascript">
+            var myCodeMirror;
+            globalThis.myCodeMirror = null;
+            if (navigator.serviceWorker) {
+                navigator.serviceWorker.register('sw.js');
+            }
+
+            window.addEventListener('load', function() {
+                editorpage = document.getElementById("editor");
+                myCodeMirror = CodeMirror(editorpage, {
+                    value: "# Welcome to Nuilith IDE\n",
+                    mode: "python",
+                    theme: "programiz",              // needs dracula.css from unpkg
+                    lineNumbers: true,
+                    indentUnit: 2,
+                    tabSize: 2,
+                    indentWithTabs: false,
+                    smartIndent: true,
+                    electricChars: true,
+                    lineWrapping: false,
+                    autofocus: true,
+                    undoDepth: 200,
+                    historyEventDelay: 1000,
+                    cursorBlinkRate: 530,
+                    cursorScrollMargin: 4,
+                    cursorHeight: 1,
+                    lineWiseCopyCut: true,
+                    dragDrop: true,
+                    viewportMargin: 50,            // render extra lines above/below for smoother scroll
+                    maxHighlightLength: 50000,
+                    fixedGutter: true,
+                    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+                    scrollbarStyle: "native",
+                    inputStyle: "textarea",
+                    extraKeys: {
+                        "Tab": (cm) => {
+                            if (cm.somethingSelected()) {
+                                cm.indentSelection("add");
+                            } else {
+                                cm.replaceSelection("    ", "end"); // 4 spaces instead of tab char
+                            }
+                        },
+                        "Shift-Tab": (cm) => cm.indentSelection("subtract"),
+                        "Ctrl-/": "toggleComment",             // needs addon/comment/comment.js
+                        "Ctrl-Z": "undo",
+                        "Ctrl-Y": "redo",
+                        "Ctrl-D": "deleteLine",
+                        "Ctrl-F": "findPersistent",            // needs addon/search
+                        "Ctrl-H": "replace",                   // needs addon/search
+                        "Ctrl-G": "jumpToLine",                // needs addon/search
+                        "Alt-Up": "swapLineUp",                // needs addon/move-lines
+                        "Alt-Down": "swapLineDown",
+                        "Ctrl-]": (cm) => cm.indentSelection("add"),
+                        "Ctrl-[": (cm) => cm.indentSelection("subtract"),
+                    }
+                });
+            });
+
+            function runcode(code) {
+                console.log(code);
+                console.log('code ran successfully');
+            }
+        </script>
+    </head>
+    <body>
+        <div class="w-70 m-5 " id="info" x-data="{ open: false }">
+            <h1 class="text-2xl text-center bg-gray-800 border-4 border-gray-700 p-4 rounded-2xl"><span class="clickable" @click="open = true" @click.away="open = false">Nuilith</span> Python IDE</h1>
+
+            <span class="text-sm w-150 inline-block border-4 border-gray-800 p-4 rounded-lg bg-gray-700" x-show="open" x-transition.opacity.duration.300ms style="display: none;">
+                <b>Nuilith</b> is a <a style="text-decoration: none;" class="clickable" href="https://en.wikipedia.org/wiki/Neo-Latin">Neo-Latin</a> pseudoword meaning "No Stupid", which reinforces the idea of this IDE, to be a no-stupid straightforward Python IDE.
+            </span>
+
+            
+        </div>
+        <div class="flex w-full h-100 overflow-hidden" style="height: calc(100vh - 120px);" id="doublepanel">
+            <div class="w-1/2 h-full overflow-hidden border-r-4 border-gray-700">
+                <div class="border-t-3 border-b-2 border-gray-700" style="background-color: var(--menu);" id="toolbar-left">
+                    <ol class="flex flex-row p-2 items-center justify-end" style="justify-content: space-between;">
+                        <li class="items-center justify-center text-center"><p class="flex text-lg w-20 h-8 items-center justify-center text-white align-middle text-center rounded-lg bg-gray-700">main.py</p></li>
+                        <li><button class="w-15 h-7 rounded-lg text-white clickbutton" onclick="runcode(myCodeMirror.getValue());">Run</button></li>
+                    </ol>
+                </div>
+                <div class="w-full h-full overflow-hidden" id="editor"></div>
+            </div>
+            <div class="w-1/2 h-full overflow-hidden" id="output">
+                <div class="border-t-3 border-b-2 border-gray-700" style="background-color: var(--menu);" id="toolbar-right">
+                    <ol class="flex flex-row p-2 items-center justify-end" style="justify-content: space-between;">
+                        <li class="items-center justify-center text-center"><p class="flex text-lg w-20 h-8 items-center justify-center text-white align-middle text-center rounded-lg bg-gray-700">Output</p></li>
+                        <li><button class="w-15 h-7 rounded-lg text-white border-2 border-white" onclick="">Clear</button></li>
+                    </ol>
+                </div>
+                <div class="w-full h-full overflow-hidden" style="background-color: #1C2130;" id="output"></div>
+            </div>
+        </div>
+        
+        
+    </body>
+</html>

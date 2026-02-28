@@ -1,0 +1,38 @@
+:root {
+    --code: #1c2130ff;
+    --accent: #2d2f34ff;
+    --bg: #1f2023ff;
+    --hil: #0556f3ff;
+    --menu: #383b40ff;
+    --fg: #ffffffff;
+    --hil2: #c2a523ff;
+}
+
+.clickable {
+    cursor: pointer;
+    color: var(--hil);
+    transition: color 0.3s ease-in-out;
+}
+
+.clickable:hover {
+    cursor: pointer;
+    color: var(--hil2);
+    transition: color 0.3s ease-in-out;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--fg);
+}
+
+.clickbutton {
+    cursor: pointer;
+    background-color: var(--hil);
+    transition: background-color 0.15s ease-in-out;
+}
+
+.clickbutton:hover {
+    cursor: pointer;
+    background-color: var(--hil2);
+    transition: background-color 0.15s ease-in-out;
+}

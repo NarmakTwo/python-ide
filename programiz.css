@@ -1,0 +1,136 @@
+.cm-s-programiz.CodeMirror {
+  background: #1C2130;
+  color: #d4d4d4;
+  font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.cm-s-programiz .CodeMirror-gutters {
+  background: #161a26;
+  border-right: 1px solid #252a3a;
+  color: #4a4f6a;
+}
+
+.cm-s-programiz .CodeMirror-linenumber {
+  color: #4a4f6a;
+}
+
+.cm-s-programiz .CodeMirror-cursor {
+  border-left: 2px solid #d4d4d4;
+}
+
+.cm-s-programiz .CodeMirror-selected {
+  background: #264f78;
+}
+
+.cm-s-programiz.CodeMirror-focused .CodeMirror-selected {
+  background: #264f78;
+}
+
+.cm-s-programiz .CodeMirror-activeline-background {
+  background: #21263580;
+}
+
+.cm-s-programiz .CodeMirror-matchingbracket {
+  color: #ffffff !important;
+  background: #3b3d56;
+  font-weight: bold;
+}
+
+/* Keywords: from, import, as, def, class, if, elif, else,
+   while, for, in, with, return, assert, pass, break, continue, and, or, not */
+.cm-s-programiz .cm-keyword {
+  color: #CDA869;
+}
+
+/* True, False, None */
+.cm-s-programiz .cm-atom {
+  color: #812836;
+}
+
+/* Builtin functions: print, len, all, range... */
+.cm-s-programiz .cm-builtin {
+  color: #dcdcaa;
+}
+
+/* Strings */
+.cm-s-programiz .cm-string {
+  color: #8F9D6A;
+}
+.cm-s-programiz .cm-string-2 {
+  color: #8F9D6A;
+}
+
+/* Escape sequences inside strings (\n, \t, \xFF, etc.) */
+.cm-s-programiz .cm-string.cm-special,
+.cm-s-programiz .cm-string-2.cm-special {
+  color: #812836;
+}
+
+/* Comments */
+.cm-s-programiz .cm-comment {
+  color: #57a64a;
+  font-style: italic;
+}
+
+/* Numbers */
+.cm-s-programiz .cm-number {
+  color: #d16969;
+}
+
+/* Operators */
+.cm-s-programiz .cm-operator {
+  color: #d4d4d4;
+}
+
+/* self, cls */
+.cm-s-programiz .cm-variable-2 {
+  color: #5b8db8;
+}
+
+/* Regular variables */
+.cm-s-programiz .cm-variable {
+  color: #d4d4d4;
+}
+
+/* Function and class def names */
+.cm-s-programiz .cm-def {
+  color: #dcdcaa;
+}
+
+/* *args / **kwargs asterisk — styled via operator */
+.cm-s-programiz .cm-operator {
+  color: #DAD085;
+}
+
+/* Class parent (base class in class Foo(Bar)) */
+.cm-s-programiz .cm-variable.cm-callee,
+.cm-s-programiz .cm-tag {
+  color: #DAD085;
+}
+
+/* Decorators */
+.cm-s-programiz .cm-meta {
+  color: #CDA869;
+}
+
+/* Errors */
+.cm-s-programiz .cm-error {
+  color: #f44747;
+}
+
+/* Punctuation */
+.cm-s-programiz .cm-punctuation {
+  color: #d4d4d4;
+}
+
+#editor .CodeMirror {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+#editor .CodeMirror-scroll {
+    overflow: auto !important;
+}
