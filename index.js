@@ -62,7 +62,57 @@ window.addEventListener('load', async () => {
         }
     };
 
-    // 4. CodeMirror Setup
+    // 4. Draggable divider between panes
+    const container = document.getElementById('doublepanel');
+    const leftPane = document.getElementById('left-pane');
+    const rightPane = document.getElementById('output');
+    const divider = document.getElementById('divider');
+
+    if (container && leftPane && rightPane && divider) {
+        let isDragging = false;
+        let startX = 0;
+        let startLeftFraction = 0;
+
+        const minPct = 20;
+        const maxPct = 80;
+
+        const onMouseMove = (e) => {
+            if (!isDragging) return;
+            const rect = container.getBoundingClientRect();
+            if (rect.width <= 0) return;
+
+            const delta = e.clientX - startX;
+            let newLeftPx = startLeftFraction * rect.width + delta;
+            let newLeftPct = (newLeftPx / rect.width) * 100;
+            newLeftPct = Math.max(minPct, Math.min(maxPct, newLeftPct));
+
+            leftPane.style.width = `${newLeftPct}%`;
+            rightPane.style.width = `${100 - newLeftPct}%`;
+        };
+
+        const stopDrag = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            document.body.style.userSelect = '';
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', stopDrag);
+        };
+
+        divider.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            const rect = container.getBoundingClientRect();
+            const leftRect = leftPane.getBoundingClientRect();
+
+            startX = e.clientX;
+            startLeftFraction = rect.width > 0 ? leftRect.width / rect.width : 0.5;
+
+            document.body.style.userSelect = 'none';
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', stopDrag);
+        });
+    }
+
+    // 5. CodeMirror Setup
     const editorpage = document.getElementById("editor");
     globalThis.myCodeMirror = CodeMirror(editorpage, {
         value: "name = input('What is your name? ')\nprint(f'Hello, {name}!')",

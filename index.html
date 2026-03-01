@@ -48,25 +48,20 @@
     </head>
     <body>
         <div class="flex items-center gap-4 m-2" id="info" x-data="{ open: false }">
-            
-            <h1 class="text-2xl text-center bg-gray-800 border-4 border-gray-700 pt-4 pb-4 px-6 rounded-2xl flex items-center">
+            <h1 class="text-2xl text-center bg-gray-800 border border-gray-700 pt-4 pb-4 px-6 rounded-2xl flex items-center shadow-lg shadow-black/40">
                 <img src="/assets/icon.png" class="w-10 h-10 inline-block mr-2" />
                 <span class="clickable" @click="open = true" @click.away="open = false">Nuilith</span>&nbsp;Python IDE
             </h1>
 
             <div class="absolute mt-32" x-show="open" x-transition.opacity style="display: none; z-index: 50;">
-                <span class="text-sm w-80 inline-block border-4 border-gray-800 p-4 rounded-lg bg-gray-700">
+                <span class="text-sm w-80 inline-block border border-gray-800 p-4 rounded-lg bg-gray-800 shadow-md shadow-black/40">
                     <b>Nuilith</b> is a <a class="clickable" href="https://en.wikipedia.org/wiki/Neo-Latin">Neo-Latin</a> pseudoword meaning "No Stupid".
                 </span>
             </div>
-
-            <span class="text-lg whitespace-nowrap border-4 border-gray-800 p-4 rounded-lg bg-gray-700 h-full flex items-center">
-                Time since last autosave: <span id="autosavetime" class="ml-2 font-mono">0s</span>
-            </span>
             
         </div>
         <div class="flex w-full h-100 overflow-hidden" style="height: calc(100vh - 120px);" id="doublepanel">
-            <div class="w-1/2 h-full overflow-hidden border-r-4 border-gray-700">
+            <div id="left-pane" class="w-1/2 h-full overflow-hidden border-r-4 border-gray-700 pane">
                 <div class="border-t-3 border-b-2 border-gray-700" style="background-color: var(--menu);" id="toolbar-left">
                     <ol class="flex flex-row p-2 items-center justify-end" style="justify-content: space-between;">
                         <li class="items-center justify-center text-center"><p class="flex text-lg w-20 h-8 items-center justify-center text-white align-middle text-center rounded-lg bg-gray-700">main.py</p></li>
@@ -77,11 +72,11 @@
                 </div>
                 <div class="w-full h-full overflow-hidden" style="background-color: #1C2130;" id="editor"></div>
             </div>
-            <div class="w-1/2 h-full overflow-hidden" id="output">
+            <div id="divider" class="pane-divider"></div>
+            <div class="w-1/2 h-full overflow-hidden pane" id="output">
                 <div class="border-t-3 border-b-2 border-gray-700" style="background-color: var(--menu);" id="toolbar-right">
                     <ol class="flex flex-row p-2 items-center justify-end" style="justify-content: space-between;">
                         <li class="items-center justify-center text-center"><p class="flex text-lg w-20 h-8 items-center justify-center text-white align-middle text-center rounded-lg bg-gray-700">Output</p></li>
-                        <li><button class="ml-150 w-25 h-7 rounded-lg text-white border-2 border-white" onclick="repl()">Start REPL</button></li>
                         <li><button class="w-15 h-7 rounded-lg text-white border-2 border-white" onclick="term.clear();">Clear</button></li>
                     </ol>
                 </div>
