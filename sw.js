@@ -40,16 +40,19 @@ self.addEventListener('fetch', (event) => {
                 const channel = new MessageChannel();
                 
                 channel.port1.onmessage = (msg) => {
-                    resolve(new Response(msg.data, {
+                    resolve(new Response(String(msg.data ?? ''), {
                         status: 200,
                         headers: { 'Content-Type': 'text/plain' }
                     }));
                 };
 
                 self.clients.matchAll().then((clients) => {
-                    const client = clients.find(c => c.id === event.clientId) || clients[0];
+                    // Must post to the WINDOW (page), not the worker - only the page has term.read()
+                    const client = clients.find(c => c.type === 'window') || clients[0];
                     if (client) {
                         client.postMessage({ type: 'INPUT_REQUEST' }, [channel.port2]);
+                    } else {
+                        resolve(new Response('', { status: 200, headers: { 'Content-Type': 'text/plain' } }));
                     }
                 });
             })

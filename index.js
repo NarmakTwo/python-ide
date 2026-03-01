@@ -6,6 +6,7 @@ let pythonWorker = new Worker('worker.js');
 globalThis.term = null;
 globalThis.myCodeMirror = null;
 globalThis.autosaveTime = Math.floor(Date.now() / 1000);
+globalThis.nuilithPrompt = '[[b;green;]>>> ]';
 
 window.addEventListener('load', async () => {
     // 1. Service Worker Registration
@@ -22,8 +23,13 @@ window.addEventListener('load', async () => {
             navigator.serviceWorker.addEventListener('message', (event) => {
                 if (event.data.type === 'INPUT_REQUEST') {
                     const port = event.ports[0];
+                    if (!port) return;
                     globalThis.term.read("", (userInput) => {
-                        port.postMessage(userInput);
+                        // jQuery Terminal may pass array of char codes in some modes
+                        const str = Array.isArray(userInput) && userInput.every(n => typeof n === 'number')
+                            ? String.fromCharCode.apply(null, userInput)
+                            : String(userInput ?? '').replace(/\r?\n$/, '');
+                        port.postMessage(str);
                     });
                 }
             });
@@ -38,15 +44,22 @@ window.addEventListener('load', async () => {
         else if (cmd === "help") term.echo("Commands: run, clear, help");
     }, {
         greetings: 'Nuilith Python v1.0.0 (Offline Ready)',
-        prompt: '[[b;green;]>>> ]'
+        prompt: globalThis.nuilithPrompt
     });
 
     // 3. Handle Messages from the Worker
     pythonWorker.onmessage = (event) => {
         const { type, text } = event.data;
-        if (type === "PRINT") term.echo(text);
-        if (type === "ERROR") term.error(text);
-        if (type === "FINISHED") term.echo("[[i;gray;]-- Execution Finished --]");
+        // newline: false keeps typewriter chars on same line; \n in text still breaks lines
+        if (type === "PRINT") term.echo(text, { newline: false });
+        if (type === "ERROR") {
+            term.error(text, { newline: false });
+            term.set_prompt(globalThis.nuilithPrompt);
+        }
+        if (type === "FINISHED") {
+            term.echo("[[i;gray;]-- Execution Finished --]");
+            term.set_prompt(globalThis.nuilithPrompt);
+        }
     };
 
     // 4. CodeMirror Setup
@@ -69,6 +82,9 @@ window.addEventListener('load', async () => {
 });
 
 function runcode() {
+    term.clear();
+    // hide prompt while user code runs
+    if (term.set_prompt) term.set_prompt('');
     term.echo("[[b;yellow;]> Running main.py...]");
     pythonWorker.postMessage({ type: "RUN", code: myCodeMirror.getValue() });
 }

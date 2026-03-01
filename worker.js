@@ -52,12 +52,31 @@ def sync_input(prompt=""):
 builtins.input = sync_input
         `);
 
-        // Redirect stdout/stderr using our safe helper
-        pyodide.setStdout({ 
-            batched: (str) => postToUI("PRINT", str) 
+        // Redirect stdout/stderr using streaming writes with proper byte handling
+        const decoder = new TextDecoder("utf-8");
+        pyodide.setStdout({
+            write: (buffer) => {
+                try {
+                    const text = decoder.decode(buffer);
+                    postToUI("PRINT", text);
+                } catch (e) {
+                    postToUI("ERROR", "stdout decode error: " + e.message);
+                    return 0;
+                }
+                return buffer.length;
+            }
         });
-        pyodide.setStderr({ 
-            batched: (str) => postToUI("ERROR", str) 
+        pyodide.setStderr({
+            write: (buffer) => {
+                try {
+                    const text = decoder.decode(buffer);
+                    postToUI("ERROR", text);
+                } catch (e) {
+                    postToUI("ERROR", "stderr decode error: " + e.message);
+                    return 0;
+                }
+                return buffer.length;
+            }
         });
 
         try {
@@ -70,3 +89,4 @@ builtins.input = sync_input
 };
 
 initPython();
+

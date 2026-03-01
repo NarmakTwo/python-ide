@@ -1,13 +1,4 @@
 <!DOCTYPE html>
-<!-- TODO:
-add an actual wasm python interpreter
-make run button run the code
-add micropip and automatic seamless package management
-make repl button work (just launches python3)
-
-add support for pygame-ce (open in new window when virtual window is created)
-
--->
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
@@ -18,6 +9,7 @@ add support for pygame-ce (open in new window when virtual window is created)
         <meta property="og:image" content="/assets/icon.png" />
         <title>Nuilith Python IDE</title>
         <!-- basic components -->
+        <script src="/coi-serviceworker.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
         <script src="https://unpkg.com/codemirror@5.65.21/lib/codemirror.js"></script>
         <script src="https://unpkg.com/codemirror@5.65.21/mode/python/python.js"></script>
@@ -44,6 +36,8 @@ add support for pygame-ce (open in new window when virtual window is created)
         <script src="https://unpkg.com/jquery@4.0.0/dist/jquery.js"></script>
         <link rel="stylesheet" href="https://unpkg.com/jquery.terminal@2.45.2/css/jquery.terminal.css">
         <script src="https://unpkg.com/jquery.terminal@2.45.2/js/jquery.terminal.js"></script>
+        <script src="https://unpkg.com/jquery.terminal@2.45.2/js/echo_newline.js"></script>
+        <script src="https://unpkg.com/jquery.terminal@2.45.2/js/unix_formatting.js"></script>
         <script src="https://unpkg.com/js-polyfills/keyboard.js"></script>
         <script src="https://cdn.jsdelivr.net/gh/jcubic/static/js/wcwidth.js"></script>
 
