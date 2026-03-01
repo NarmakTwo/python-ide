@@ -60,9 +60,6 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // --- OFFLINE CACHING ---
-    if (event.request.method !== 'GET' || !url.protocol.startsWith('http')) return;
-
     event.respondWith(
         caches.open(CACHE_NAME).then((cache) => {
             return cache.match(event.request).then((cachedResponse) => {
