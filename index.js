@@ -245,3 +245,7 @@ async function loadcode() {
         myCodeMirror.setValue(await file.text());
     } catch (e) {}
 }
+
+window.addEventListener('beforeunload', () => {
+    saveToIDB();
+});
