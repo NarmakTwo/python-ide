@@ -7,6 +7,49 @@ globalThis.term = null;
 globalThis.myCodeMirror = null;
 globalThis.autosaveTime = Math.floor(Date.now() / 1000);
 globalThis.nuilithPrompt = '[[b;green;]>>> ]';
+let pendingLintCallback = null;
+let lintRequestId = 0;
+
+// Python lint: pyflakes via worker (async)
+const pythonLint = function(text, callback) {
+    const id = ++lintRequestId;
+    pendingLintCallback = (resultId, annotations) => {
+        if (id === resultId) callback(annotations);
+    };
+    pythonWorker.postMessage({ type: "LINT", code: text, id });
+};
+pythonLint.async = true;
+CodeMirror.registerHelper("lint", "python", pythonLint);
+
+// Python hint: method completions after a dot
+CodeMirror.registerHelper("hint", "python", function(cm, options) {
+    const cur = cm.getCursor();
+    const line = cm.getLine(cur.line).slice(0, cur.ch);
+
+    // Only trigger after a dot
+    const dotMatch = line.match(/(\w+)\.\s*(\w*)$/);
+    if (!dotMatch) return null;
+
+    const methods = {
+        str:  ["split","strip","replace","upper","lower","find","format","startswith","endswith","join","encode","decode","count","index","lstrip","rstrip","zfill","title","capitalize"],
+        list: ["append","pop","remove","sort","reverse","extend","insert","copy","count","index","clear"],
+        dict: ["keys","values","items","get","update","pop","setdefault","clear","copy"],
+        set:  ["add","remove","discard","union","intersection","difference","issubset","issuperset"],
+    };
+
+    const typed = dotMatch[2]; // what the user has typed after the dot
+    const allMethods = [...new Set(Object.values(methods).flat())];
+    const list = allMethods.filter(m => m.startsWith(typed));
+
+    if (list.length === 0) return null;
+
+    const dotPos = line.lastIndexOf(".") + 1;
+    return {
+        list,
+        from: CodeMirror.Pos(cur.line, dotPos),
+        to:   CodeMirror.Pos(cur.line, cur.ch),
+    };
+});
 
 window.addEventListener('load', async () => {
     // 1. Service Worker Registration
@@ -43,21 +86,23 @@ window.addEventListener('load', async () => {
         else if (cmd === "clear") term.clear();
         else if (cmd === "help") term.echo("Commands: run, clear, help");
     }, {
-        greetings: 'Nuilith Python v1.0.0 (Offline Ready)',
+        greetings: 'Nuilith Python',
         prompt: globalThis.nuilithPrompt
     });
 
     // 3. Handle Messages from the Worker
     pythonWorker.onmessage = (event) => {
-        const { type, text } = event.data;
-        // newline: false keeps typewriter chars on same line; \n in text still breaks lines
+        const { type, text, annotations } = event.data;
+        if (type === "LINT_RESULT" && pendingLintCallback) {
+            pendingLintCallback(event.data.id ?? 0, annotations);
+            pendingLintCallback = null;
+        }
         if (type === "PRINT") term.echo(text, { newline: false });
         if (type === "ERROR") {
             term.error(text, { newline: false });
             term.set_prompt(globalThis.nuilithPrompt);
         }
         if (type === "FINISHED") {
-            term.echo("[[i;gray;]-- Execution Finished --]");
             term.set_prompt(globalThis.nuilithPrompt);
         }
     };
@@ -119,11 +164,22 @@ window.addEventListener('load', async () => {
         mode: "python",
         theme: "programiz",
         lineNumbers: true,
+        gutters: ["CodeMirror-linenumbers", "CodeMirror-lint-markers"],
+        lint: { getAnnotations: CodeMirror.lint.python || (() => []), async: true, delay: 600 },
         indentUnit: 4,
         extraKeys: {
             "Tab": (cm) => cm.replaceSelection("    ", "end"),
             "Ctrl-Enter": () => runcode(),
-            "Ctrl-S": (cm) => { saveToIDB(); return false; }
+            "Ctrl-S": (cm) => { saveToIDB(); return false; },
+            "Ctrl-Space": "autocomplete",
+            "Esc": (cm) => cm.closeHint?.()
+        }
+    });
+
+    // Auto-trigger hint dropdown when user types a dot
+    globalThis.myCodeMirror.on("inputRead", function(cm, change) {
+        if (change.text[0] === ".") {
+            CodeMirror.commands.autocomplete(cm, null, { completeSingle: false });
         }
     });
 
@@ -135,16 +191,11 @@ function runcode() {
     term.clear();
     // hide prompt while user code runs
     if (term.set_prompt) term.set_prompt('');
-    term.echo("[[b;yellow;]> Running main.py...]");
     pythonWorker.postMessage({ type: "RUN", code: myCodeMirror.getValue() });
 }
 
 function setupTimers() {
     setInterval(() => saveToIDB(), 30000);
-    setInterval(() => {
-        const diff = Math.floor(Date.now() / 1000) - globalThis.autosaveTime;
-        $('#autosavetime').text(`${diff}s`);
-    }, 1000);
 }
 
 function saveToIDB() {

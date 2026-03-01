@@ -17,7 +17,69 @@ async function initPython() {
 }
 
 self.onmessage = async (event) => {
-    const { type, code } = event.data;
+    const { type, code, id } = event.data;
+
+    if (type === "LINT") {
+        if (!pyodide) return;
+        try {
+            self.__lint_code__ = code;
+            await pyodide.runPythonAsync(`
+import json
+import micropip
+try:
+    import pyflakes
+except ImportError:
+    micropip.install('pyflakes')
+    import pyflakes
+
+from pyflakes.api import check
+from pyflakes.reporter import Reporter
+import io
+
+class LintReporter(Reporter):
+    def __init__(self):
+        Reporter.__init__(self, io.StringIO(), io.StringIO())
+        self.errors = []
+    def unexpectedError(self, filename, msg):
+        self.errors.append({"line": 0, "ch": 0, "message": msg, "severity": "error"})
+    def syntaxError(self, filename, msg, lineno, offset, text):
+        self.errors.append({
+            "line": max((lineno or 1) - 1, 0),
+            "ch": max(offset or 0, 0),
+            "message": msg,
+            "severity": "error"
+        })
+    def flake(self, message):
+        self.errors.append({
+            "line": message.lineno - 1,
+            "ch": message.col,
+            "message": str(message).split(": ", 3)[-1] if ":" in str(message) else str(message),
+            "severity": "warning"
+        })
+
+r = LintReporter()
+from js import __lint_code__
+code_str = __lint_code__.to_py()
+check(code_str, "main.py", r)
+            `);
+            const result = await pyodide.runPythonAsync("json.dumps(r.errors)");
+            const annotations = JSON.parse(result.toString());
+            const formatted = annotations.map(a => ({
+                from: { line: a.line, ch: a.ch },
+                to: { line: a.line, ch: Math.max(a.ch + 1, 0) },
+                message: a.message,
+                severity: a.severity || "warning"
+            }));
+            if (!formatted.toString().includes("micropip") && !formatted.toString().includes("pyflakes")) {
+                self.postMessage({ type: "LINT_RESULT", id, annotations: formatted });
+            }
+        } catch (err) {
+            if (!formatted.toString().includes("micropip") && !formatted.toString().includes("pyflakes")) {
+                self.postMessage({ type: "LINT_RESULT", id, annotations: [{ from: { line: 0, ch: 0 }, to: { line: 0, ch: 1 }, message: String(err.message), severity: "error" }] });
+            }
+        }
+        return;
+    }
 
     if (type === "RUN") {
         if (!pyodide) return;
