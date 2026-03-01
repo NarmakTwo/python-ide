@@ -1,3 +1,4 @@
+
 # Nuilith Python IDE
 
 A browser-based Python IDE that runs entirely offline. No server, no backend, no account. You write code, it runs in the tab.
@@ -6,9 +7,9 @@ The name is Neo-Latin for "No Stupid". Make of that what you will.
 
 ## Background
 
-Nuilith started as a riff on the Programiz online IDE — same general layout, same editor feel, same kind of audience. The difference is that Programiz requires a server to execute code. Nuilith doesn't. Everything runs locally in the browser through Pyodide (Python compiled to WebAssembly), so once the page has loaded once, it works without any connection at all.
+Nuilith started as a riff on the Programiz online IDE. Same general layout, same editor feel, same kind of audience. The difference is that Programiz requires a server to execute code. Nuilith doesn't. Everything runs locally in the browser through Pyodide (Python compiled to WebAssembly), so once the page has loaded once, it works without any connection at all.
 
-The editor theme is also adapted from Programiz's CodeMirror theme.
+The editor theme is also replicated from Programiz's theme.
 
 ## Fully static and offline-capable
 
@@ -20,7 +21,7 @@ The only caveat is that on first load, Pyodide (~10MB) and pyflakes have to down
 
 Nuilith gives you a split-pane editor and terminal in the browser. The left side is a CodeMirror editor with Python syntax highlighting, line numbers, and live linting via pyflakes. The right side is an interactive terminal where your program's output appears. You can resize the split by dragging the divider.
 
-Python runs inside a Web Worker so the UI stays responsive. `input()` is handled via a synchronous XHR trick routed through a Service Worker, which means programs that call `input()` actually pause and wait for the user to type — the same way they would in a real terminal.
+Python runs inside a Web Worker so the UI stays responsive. `input()` is handled via a synchronous XHR trick routed through a Service Worker, which means programs that call `input()` actually pause and wait for the user to type, the same way they would in a real terminal.
 
 Code is autosaved to IndexedDB every 30 seconds and restored when you reopen the page.
 
